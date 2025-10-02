@@ -1,4 +1,3 @@
-use regex::Regex;
 use crate::utils::error::CustomError;
 
 // pub fn validate_password(password: &str) -> Result<(), CustomError> {

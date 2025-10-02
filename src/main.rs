@@ -9,9 +9,13 @@ mod database;
 mod middleware;
 mod utils;
 use middleware::not_found::not_found;
-use middleware::error_handler::handle_error;
+//use middleware::error_handler::handle_error;
 use router::index::routes;
 use serde_json::json;
+
+use crate::post::post_service::PostService;
+use crate::user::service::UserService;
+mod post;
 mod router;
 mod user;
 
@@ -41,8 +45,8 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to connect to MongoDB");
 
     // Create UserService
-    // let user_service = web::Data::new(UserService::new(&mongo_client));
-    // let todo_service = web::Data::new(TodoService::new(&mongo_client));
+    let user_service = web::Data::new(UserService::new(&mongo_client));
+    let post_service = web::Data::new(PostService::new(&mongo_client));
 
     // Start the HTTP server
     HttpServer::new(move || {
@@ -50,13 +54,11 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
             .app_data(web::Data::new(mongo_client.clone()))
-            // .app_data(user_service.clone())
-            // .app_data(todo_service.clone())
+            .app_data(user_service.clone())
+            .app_data(post_service.clone())
             .configure(routes)
             .wrap(
-                ErrorHandlers::new()
-                    .handler(StatusCode::NOT_FOUND, not_found)
-                    .default_handler(handle_error),
+                ErrorHandlers::new().handler(StatusCode::NOT_FOUND, not_found), // .default_handler(handle_error),
             )
             .service(default)
     })

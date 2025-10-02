@@ -1,5 +1,5 @@
-use mongodb::{Client, options::ClientOptions};
 use mongodb::bson::doc;
+use mongodb::{Client, options::ClientOptions};
 use std::error::Error;
 
 pub struct Database {
@@ -19,7 +19,7 @@ impl Database {
         // Ping the server to see if you can connect to the cluster
         client
             .database("admin")
-            .run_command(doc! {"ping": 1}, )
+            .run_command(doc! {"ping": 1})
             .await?;
 
         println!("Connected successfully to MongoDB");
@@ -32,9 +32,9 @@ impl Database {
 
 // This function is a convenience wrapper around Database::init()
 pub async fn connect_to_mongo() -> Result<Client, Box<dyn Error>> {
-     let database = Database::init().await.map_err(|e| {
-          eprintln!("Failed to initialize database: {:?}", e);
-          e
-      })?;
-      Ok(database.client)
+    let database = Database::init().await.map_err(|e| {
+        eprintln!("Failed to initialize database: {:?}", e);
+        e
+    })?;
+    Ok(database.client)
 }

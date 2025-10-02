@@ -3,18 +3,13 @@ use crate::user::model::User;
 use crate::utils::error::CustomError;
 use crate::utils::model::LoginRequests;
 use crate::utils::{hashing, password_validation};
+use chrono::Utc;
 use mongodb::bson::{doc, oid::ObjectId};
 use mongodb::{Client, Collection};
-use serde::Serialize;
+
 
 pub struct UserService {
     collection: Collection<User>,
-}
-
-#[derive(Serialize)]
-struct Claims {
-    id: String,
-    exp: usize,
 }
 
 impl UserService {
@@ -57,9 +52,9 @@ impl UserService {
                 "Phone number already exists".to_string(),
             ));
         }
+        eprintln!("❌ Checked phone_number existence");
         // Validate password
-        password_validation::validate_password(&password)
-            .map_err(|e| CustomError::BadRequestError(e.to_string()))?;
+        let _ = password_validation::validate_password(&password);
 
         // Hash the password
         let hashed_password = hashing::hash_password(&password)
@@ -72,6 +67,8 @@ impl UserService {
             email,
             phone_number,
             password: hashed_password,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
         };
 
         // Insert the user
@@ -83,6 +80,7 @@ impl UserService {
 
         // Return the inserted ID
         result.inserted_id.as_object_id().ok_or_else(|| {
+            eprintln!("❌ MongoDB insert failed: inserted_id is not an ObjectId");
             CustomError::InternalServerError("Failed to get inserted ID".to_string())
         })
     }
@@ -146,9 +144,10 @@ impl UserService {
             .id
             .as_ref()
             .ok_or_else(|| CustomError::InternalServerError("User ID missing".to_string()))?;
+
         let token = create_token(&user_id.to_hex())
             .await
-            .map_err(|e| CustomError::InternalServerError(e.to_string()))?;
+            .map_err(|_| CustomError::BadRequestError("Token generation failed".to_string()))?;
 
         Ok(token)
     }

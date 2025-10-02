@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use mongodb::bson::{doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 
@@ -7,27 +8,16 @@ pub struct User {
     pub id: Option<ObjectId>,
     pub username: String,
     pub email: String,
+    pub password: String,
     pub phone_number: String,
-    pub password: String,
-}
-
-#[derive(Deserialize)]
-pub struct LoginRequests {
-    pub username: String,
-    pub password: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Deserialize)]
 pub struct CreateUserRequest {
     pub username: String,
     pub email: String,
-    pub phone_number: String,
     pub password: String,
-}
-
-#[derive(serde::Serialize)]
-pub struct LoginResponse {
-    pub success: bool,
-    pub message: String,
-    pub token: String,
+    pub phone_number: String,
 }
