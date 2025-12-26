@@ -26,7 +26,9 @@ use crate::utils::error::CustomError;
 pub fn validate_password(password: &str) -> Result<(), CustomError> {
     // Check password length
     if password.len() < 8 || password.len() > 20 {
-        return Err(CustomError::BadRequestError("Password must be between 8 and 20 characters long.".into()));
+        return Err(CustomError::BadRequestError(
+            "Password must be between 8 and 20 characters long.".into(),
+        ));
     }
 
     // Check for at least one lowercase letter, one uppercase letter, and one digit

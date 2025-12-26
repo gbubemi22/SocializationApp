@@ -1,3 +1,4 @@
+use actix::Actor;
 use actix_web::http::StatusCode;
 use actix_web::middleware::{ErrorHandlers, Logger};
 use actix_web::{App, HttpResponse, HttpServer, Responder, get, web};
@@ -5,19 +6,25 @@ use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
 
+mod chat;
+mod comment;
 mod database;
 mod middleware;
+mod post;
+mod router;
+mod uploader;
+mod user;
 mod utils;
+
+use chat::server::ChatServer;
+use database::{RedisService, connect_to_redis};
 use middleware::not_found::not_found;
-//use middleware::error_handler::handle_error;
 use router::index::routes;
 use serde_json::json;
 
+use crate::comment::service::CommentService;
 use crate::post::post_service::PostService;
 use crate::user::service::UserService;
-mod post;
-mod router;
-mod user;
 
 #[get("/")]
 async fn default() -> impl Responder {
@@ -37,16 +44,34 @@ async fn main() -> std::io::Result<()> {
     // Initialize logger with environment variable support
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    // Log the server start
-    info!("Starting server on http://localhost:8000");
+    // Get the port from environment variable, default to 8000
+    let port: u16 = std::env::var("PORT")
+        .unwrap_or_else(|_| "8000".to_string())
+        .parse()
+        .expect("PORT must be a valid number");
 
+    // Log the server start
+    info!("Starting server on http://localhost:{}", port);
+
+    // Connect to MongoDB
     let mongo_client = database::connect_to_mongo()
         .await
         .expect("Failed to connect to MongoDB");
 
-    // Create UserService
+    // Connect to Redis
+    let redis_client = connect_to_redis()
+        .await
+        .expect("Failed to connect to Redis");
+    let redis_service = web::Data::new(RedisService::new(&redis_client));
+
+    // Start WebSocket chat server
+    let chat_server = ChatServer::new().start();
+    info!("WebSocket chat server started");
+
+    // Create services
     let user_service = web::Data::new(UserService::new(&mongo_client));
     let post_service = web::Data::new(PostService::new(&mongo_client));
+    let comment_service = web::Data::new(CommentService::new(&mongo_client));
 
     // Start the HTTP server
     HttpServer::new(move || {
@@ -54,15 +79,16 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
             .app_data(web::Data::new(mongo_client.clone()))
+            .app_data(redis_service.clone())
+            .app_data(web::Data::new(chat_server.clone()))
             .app_data(user_service.clone())
             .app_data(post_service.clone())
+            .app_data(comment_service.clone())
             .configure(routes)
-            .wrap(
-                ErrorHandlers::new().handler(StatusCode::NOT_FOUND, not_found), // .default_handler(handle_error),
-            )
+            .wrap(ErrorHandlers::new().handler(StatusCode::NOT_FOUND, not_found))
             .service(default)
     })
-    .bind(("localhost", 8000))?
+    .bind(("localhost", port))?
     .run()
     .await?;
 

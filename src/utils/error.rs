@@ -1,4 +1,4 @@
-use actix_web::{http::StatusCode, HttpResponse, ResponseError};
+use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use serde_json::json;
 use thiserror::Error;
 
@@ -7,22 +7,22 @@ use thiserror::Error;
 pub enum CustomError {
     #[error("Unauthorized: {0}")]
     UnauthorizedError(String),
-    
+
     #[error("Bad Request: {0}")]
     BadRequestError(String),
-    
+
     #[error("Conflict: {0}")]
     ConflictError(String),
-    
+
     #[error("Internal Server Error: {0}")]
     InternalServerError(String),
-    
+
     #[error("Unauthenticated: {0}")]
     UnauthenticatedError(String),
-    
+
     #[error("Not Found: {0}")]
     NotFoundError(String),
-    
+
     #[error("Validation Error: {0}")]
     ValidationError(String),
 }
@@ -57,7 +57,6 @@ impl ResponseError for CustomError {
             "service": std::env::var("SERVICE_NAME").unwrap_or_else(|_| "Unknown".to_string()),
         });
 
-        HttpResponse::build(self.status_code())
-            .json(error_message)
+        HttpResponse::build(self.status_code()).json(error_message)
     }
 }

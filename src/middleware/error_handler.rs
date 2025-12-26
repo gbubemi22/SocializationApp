@@ -1,11 +1,10 @@
-use actix_web::{HttpResponse, ResponseError};
 use actix_web::http::StatusCode;
+use actix_web::{HttpResponse, ResponseError};
 // use actix_web::dev::ServiceResponse;
 // use actix_web::middleware::ErrorHandlerResponse;
 use serde_json::json;
 use std::fmt;
 #[allow(dead_code)]
-
 #[derive(Debug)]
 pub enum CustomError {
     ValidationError(String),
@@ -58,7 +57,7 @@ impl ResponseError for CustomError {
 // pub fn handle_error<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
 //      let error_message = res.response().error().map(|e| e.to_string()).unwrap_or_else(|| "Unknown error".to_string());
 //      let status_code = res.response().status();
-     
+
 //      let new_response = HttpResponse::build(status_code)
 //          .json(json!({
 //              "success": false,
@@ -67,12 +66,12 @@ impl ResponseError for CustomError {
 //              "error": status_code.canonical_reason().unwrap_or("Unknown"),
 //              "service": std::env::var("SERVICE_NAME").unwrap_or_else(|_| "Unknown".to_string()),
 //          }));
- 
+
 //      let (req, _) = res.into_parts();
 //      let res = ServiceResponse::new(
 //          req,
 //          new_response.map_into_right_body()
 //      );
- 
+
 //      Ok(ErrorHandlerResponse::Response(res))
 //  }
